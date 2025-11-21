@@ -12,20 +12,11 @@ app.use(express.json());
 
 
 
-
-app.use(
-  cors({
-    origin: [process.env.CORS_ORIGIN, "http://localhost:5000"], // allowed frontend(s)
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
-
 // PostgreSQL connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
     ssl: {
+    
     rejectUnauthorized: false, // allow Supabase self-signed cert
   }
 });
