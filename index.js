@@ -25,7 +25,9 @@ app.use(
 // PostgreSQL connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }  // remove if local
+    ssl: {
+    rejectUnauthorized: false, // allow Supabase self-signed cert
+  }
 });
 
 // POST contact form API
