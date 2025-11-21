@@ -49,7 +49,6 @@ app.post("/api/contact", async (req, res) => {
 
     res.status(201).json({
       success: true,
-      data: result.rows[0],
       message: "Message submitted successfully."
     });
 
