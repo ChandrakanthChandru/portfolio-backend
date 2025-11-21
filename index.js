@@ -7,27 +7,30 @@ dotenv.config();
 const { Pool } = pkg;
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN,
+}));
 app.use(express.json());
 
-
-
-// PostgreSQL connection
+// ===============================
+// PostgreSQL Connection
+// ===============================
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-    ssl: {
-    
-    rejectUnauthorized: false, // allow Supabase self-signed cert
-  }
+  ssl: { rejectUnauthorized: false }  // Supabase SSL required
 });
 
-// POST contact form API
+// ===============================
+// POST /api/contact
+// ===============================
 app.post("/api/contact", async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
 
     if (!name || !email || !message) {
-      return res.status(400).json({ error: "Name, email and message are required." });
+      return res.status(400).json({
+        error: "Name, email, and message are required.",
+      });
     }
 
     const query = `
@@ -36,23 +39,24 @@ app.post("/api/contact", async (req, res) => {
       RETURNING *;
     `;
 
-    const values = [name, email, subject, message];
+    const values = [name, email, subject || null, message];
 
-    const result = await pool.query(query, values);
+    await pool.query(query, values);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
-      message: "Message submitted successfully."
+      message: "Message submitted successfully!",
     });
-
   } catch (err) {
-    console.error("Error saving message:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("❌ Error saving message:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-
-
-app.listen(process.env.PORT || 5000, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
+// ===============================
+// Server Start
+// ===============================
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
