@@ -1,24 +1,25 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import pkg from "pg";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
-const { Pool } = pkg;
 
 const app = express();
-app.use(cors({
-  origin: process.env.CORS_ORIGIN,
-}));
+app.use(cors());
 app.use(express.json());
 
 // ===============================
-// PostgreSQL Connection
+// Supabase Client
 // ===============================
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }  // Supabase SSL required
-});
+console.log("🔗 Connecting to Supabase...");
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY // better for backend inserts
+);
+
+console.log("✅ Supabase client initialized");
 
 // ===============================
 // POST /api/contact
@@ -33,20 +34,29 @@ app.post("/api/contact", async (req, res) => {
       });
     }
 
-    const query = `
-      INSERT INTO contact_messages (name, email, subject, message)
-      VALUES ($1, $2, $3, $4)
-      RETURNING *;
-    `;
+    // Insert into Supabase table
+    const { data, error } = await supabase
+      .from("contact_messages")
+      .insert([
+        {
+          name,
+          email,
+          subject: subject || null,
+          message,
+        },
+      ]);
 
-    const values = [name, email, subject || null, message];
-
-    await pool.query(query, values);
+    if (error) {
+      console.error("❌ Supabase Insert Error:", error);
+      return res.status(500).json({ error: "Failed to save message" });
+    }
 
     return res.status(201).json({
       success: true,
       message: "Message submitted successfully!",
+      data,
     });
+
   } catch (err) {
     console.error("❌ Error saving message:", err);
     return res.status(500).json({ error: "Internal server error" });
